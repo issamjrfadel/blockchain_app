@@ -102,17 +102,50 @@ App = {
       }
     
       var account = accounts[0];
-    
-      App.contracts.Adoption.deployed().then(function(instance) {
-        adoptionInstance = instance;
-    
-        // Execute adopt as a transaction by sending account
-        return adoptionInstance.adopt(petId, {from: account});
-      }).then(function(result) {
-        return App.markAdopted();
-      }).catch(function(err) {
-        console.log(err.message);
-      });
+
+      var access_level;
+
+      found = false;
+    // Load eth addresses.
+    $.getJSON('../address.json', function(data) {
+
+      for (i = 0; i < data.length; i ++) {
+        //check if the address of user is stored in json file
+        if(data[i].address.toLowerCase() == account){
+          //if it is retrieve users access level
+          access_level = data[i].access_level;
+          //load pets json.
+          $.getJSON('../pets.json', function(data) {
+      
+            for (i = 0; i < data.length; i ++) {
+              //check if the pet the user wants to adopt is stored in json file
+              if(data[i].id == petId){
+                //if the user access level is greater than or equal to required pet access level then allow them to adopt
+                  if(access_level >= data[i].access_level){
+
+                    App.contracts.Adoption.deployed().then(function(instance) {
+                      adoptionInstance = instance;
+                      // Execute adopt as a transaction by sending account
+                      return adoptionInstance.adopt(petId, {from: account});
+                    }).then(function(result) {
+                      return App.markAdopted();
+                    }).catch(function(err) {
+                      console.log(err.message);
+                    });
+                    break;
+                  }
+                  else{
+                    //if their access level isn't high enough stop adoption
+                    alert("cannot adopt this pet");
+                    break;
+                  }
+              }
+            }
+          });
+        }
+      }
+    });
+
     });
   }
 
